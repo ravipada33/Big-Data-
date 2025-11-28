@@ -1,0 +1,9 @@
+2025-11-28 15:34:52,848 INFO: Download completed for ['AAPL', 'MSFT', 'TSLA', 'AMZN'] in 3.746s
+2025-11-28 15:34:52,849 INFO: Raw row counts per ticker: {'AAPL': 1258, 'MSFT': 1258, 'TSLA': 1258, 'AMZN': 1258}
+2025-11-28 15:34:52,891 INFO: Processing (monthly stats for 2024) completed in 0.042s
+2025-11-28 15:34:52,892 INFO: Rows in 2024 used per ticker: {'AAPL':252, 'MSFT':252, 'TSLA':252, 'AMZN':252}
+2025-11-28 15:34:52,894 INFO: Aggregation (combined monthly stats) completed in 0.002s
+2025-11-28 15:34:52,894 INFO: Combined aggregated rows: 48
+2025-11-28 15:34:52,894 INFO: Total script elapsed time: 3.793s (download 3.746s, processing 0.042s, aggregation 0.002s)
+2025-11-28 15:34:52,894 INFO: Total raw rows processed: 5032, total 2024 rows used: 1008, total aggregated rows: 48
+2025-11-28 15:34:52,908 INFO: Combined monthly CSV written to: D:\1 Study Material\Semester - 6\Big data\Project\Big-Data-\combined_monthly_2024.csv
