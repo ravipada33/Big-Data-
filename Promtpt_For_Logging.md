@@ -11,3 +11,10 @@ i want to find the elasped time in each phase
 from the data downloading from yfaniance and then processing and then aggerating result
 
 and then i want the total time elasped of my whole file and also how many entries were accected during whole project.
+
+
+
+100 STOCK TICKERS FROM YFINANCE 
+Hey i want to process this same project but for now 100 tickers
+so how can i get the list of 100 ticker list and pass it to the script instead of the hard coded list.
+and it should be dynamic cause in future i want to expand this project.
