@@ -4,7 +4,7 @@ import logging
 import argparse
 from time import perf_counter
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 import pandas as pd
 import yfinance as yf  # library to get data from Yahoo Finance
@@ -29,7 +29,7 @@ def configure_logging(log_path: Path = LOG_PATH) -> None:
 
 
 # --- Helpers: fetch tickers --------------------------------------------------
-def fetch_sp500_symbols(limit: int | None = None) -> List[str]:
+def fetch_sp500_symbols(limit: Optional[int] = None) -> List[str]:
     """
     Fetch S&P 500 symbols from public CSV mirrors.
     Returns a list of ticker symbols (periods replaced with '-').
@@ -65,7 +65,7 @@ def fetch_sp500_symbols(limit: int | None = None) -> List[str]:
     )
 
 
-def load_tickers_from_file(path: Path, limit: int | None = None) -> List[str]:
+def load_tickers_from_file(path: Path, limit: Optional[int] = None) -> List[str]:
     """Read one ticker per line from a file (ignore comments / blank lines)."""
     lines = []
     with open(path, "r", encoding="utf-8") as fh:
@@ -134,7 +134,7 @@ def monthly_stats_for_period(
 
 # --- Main S&P500 flow --------------------------------------------------------
 def run_sp500(
-    max_tickers: int | None = None,
+    max_tickers: Optional[int] = None,
     chunk_size: int = 100,
     start_date: str = "2020-01-01",
     end_date: str = "2025-01-01",
