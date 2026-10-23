@@ -2,6 +2,7 @@ import io
 import sys
 import logging
 import argparse
+from difflib import get_close_matches
 from datetime import datetime
 from time import perf_counter
 from pathlib import Path
@@ -83,8 +84,21 @@ def resolve_selection(selection: str, symbols: List[str]) -> List[str]:
         "nvidia": "NVDA",
         "tesla": "TSLA",
     }
-    requested = aliases.get(value.lower(), value.upper().replace(".", "-"))
+    normalized = "".join(value.lower().split())
+    normalized_aliases = {"".join(name.split()): ticker for name, ticker in aliases.items()}
+    requested = normalized_aliases.get(normalized, value.upper().replace(".", "-"))
     if requested not in symbols:
+        candidates = list(symbols) + list(normalized_aliases)
+        match = get_close_matches(normalized, candidates, n=1, cutoff=0.55)
+        if match:
+            suggested = normalized_aliases.get(match[0], match[0])
+            answer = input(
+                f"Could not find '{value}'. Did you mean '{match[0]}' ({suggested})? (yes/no): "
+            ).strip().lower()
+            if answer in {"yes", "y"} and suggested in symbols:
+                return [suggested]
+        if normalized == "spacex":
+            raise ValueError("SpaceX is a private company and is not listed in the S&P 500.")
         raise ValueError(f"Could not find '{value}' in the S&P 500 list.")
     return [requested]
 
