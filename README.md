@@ -27,7 +27,24 @@ python -m pip install -r requirements.txt
 python FinancialData.py --sp500
 ```
 
-The program will download and process the S&P 500 data.
+The program asks what you want to download. Enter a number for the first companies:
+
+```text
+10
+```
+
+Or enter a company name:
+
+```text
+Tesla
+```
+
+You can also provide the choice directly in the command:
+
+```powershell
+python FinancialData.py --sp500 --selection 10
+python FinancialData.py --sp500 --selection Tesla
+```
 
 ### 4. Check the results
 
@@ -39,7 +56,7 @@ Open these files:
 - `FinancialData.log`  
   Contains the program time and processing information.
 
-For a quick test with only 10 companies, use:
+For a quick test with the first 10 companies, use:
 
 ```powershell
 python FinancialData.py --sp500 --max-tickers 10

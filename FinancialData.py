@@ -29,7 +29,7 @@ def configure_logging(log_path: Path = LOG_PATH) -> None:
 
 
 # --- Helpers: fetch tickers --------------------------------------------------
-def fetch_sp500_symbols(limit: Optional[int] = None) -> List[str]:
+def fetch_sp500_symbols() -> List[str]:
     """
     Fetch S&P 500 symbols from public CSV mirrors.
     Returns a list of ticker symbols (periods replaced with '-').
@@ -55,14 +55,37 @@ def fetch_sp500_symbols(limit: Optional[int] = None) -> List[str]:
                     text = r.read().decode("utf-8")
             df = pd.read_csv(io.StringIO(text))
             syms = df["Symbol"].astype(str).str.replace(".", "-", regex=False).tolist()
-            if limit:
-                return syms[:limit]
             return syms
         except Exception as exc:
             logging.warning("Failed to fetch S&P500 from %s: %s", url, exc)
     raise RuntimeError(
         "Unable to fetch S&P 500 constituents; provide a local tickers.txt or check network."
     )
+
+
+def resolve_selection(selection: str, symbols: List[str]) -> List[str]:
+    """Return the first N symbols or one symbol matching a ticker/company name."""
+    value = selection.strip()
+    if value.isdigit():
+        count = int(value)
+        if count < 1 or count > len(symbols):
+            raise ValueError(f"Enter a number between 1 and {len(symbols)}.")
+        return symbols[:count]
+
+    aliases = {
+        "apple": "AAPL",
+        "amazon": "AMZN",
+        "alphabet": "GOOGL",
+        "google": "GOOGL",
+        "microsoft": "MSFT",
+        "meta": "META",
+        "nvidia": "NVDA",
+        "tesla": "TSLA",
+    }
+    requested = aliases.get(value.lower(), value.upper().replace(".", "-"))
+    if requested not in symbols:
+        raise ValueError(f"Could not find '{value}' in the S&P 500 list.")
+    return [requested]
 
 
 def load_tickers_from_file(path: Path, limit: Optional[int] = None) -> List[str]:
@@ -142,6 +165,7 @@ def monthly_stats_for_period(
 # --- Main S&P500 flow --------------------------------------------------------
 def run_sp500(
     max_tickers: Optional[int] = None,
+    selection: Optional[str] = None,
     chunk_size: int = 100,
     start_date: str = "2020-01-01",
     end_date: str = "2025-01-01",
@@ -149,7 +173,12 @@ def run_sp500(
 ) -> None:
     _total_start = perf_counter()
     logging.info("SP500 mode enabled — fetching S&P 500 symbols")
-    tickers_list = fetch_sp500_symbols(limit=max_tickers)
+    all_symbols = fetch_sp500_symbols()
+    if selection is None:
+        selection = str(max_tickers) if max_tickers is not None else input(
+            "How many S&P 500 companies, or which company? (example: 10 or Tesla): "
+        )
+    tickers_list = resolve_selection(selection, all_symbols)
     logging.info("Loaded %d symbols (sample: %s)", len(tickers_list), tickers_list[:6])
 
     _download_start = perf_counter()
@@ -216,13 +245,27 @@ def main() -> None:
     configure_logging()
     parser = argparse.ArgumentParser(description="Financial data processor")
     parser.add_argument("--sp500", action="store_true", help="Process the full S&P 500")
-    parser.add_argument("--max-tickers", type=int, default=None, help="Limit tickers (for testing)")
+    parser.add_argument(
+        "--selection",
+        default=None,
+        help="Number of leading S&P 500 companies or company name/ticker, e.g. 10 or Tesla",
+    )
+    parser.add_argument(
+        "--max-tickers",
+        type=int,
+        default=None,
+        help="Backward-compatible alias for selecting the first N companies",
+    )
     parser.add_argument("--chunk-size", type=int, default=100, help="yf.download chunk size")
     args = parser.parse_args()
 
     if args.sp500:
         try:
-            run_sp500(max_tickers=args.max_tickers, chunk_size=args.chunk_size)
+            run_sp500(
+                max_tickers=args.max_tickers,
+                selection=args.selection,
+                chunk_size=args.chunk_size,
+            )
         except Exception as exc:
             logging.exception("Unhandled error in SP500 flow: %s", exc)
             raise
