@@ -2,6 +2,7 @@ import io
 import sys
 import logging
 import argparse
+from datetime import datetime
 from time import perf_counter
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
@@ -234,7 +235,8 @@ def run_sp500(
         total_aggregated_rows,
     )
 
-    out_csv = Path.cwd() / "combined_monthly_sp500_2024.csv"
+    run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    out_csv = Path.cwd() / f"combined_monthly_sp500_2024_{run_timestamp}.csv"
     combined_monthly.to_csv(out_csv, index=False)
     logging.info("Saved combined CSV to %s", out_csv)
     print(f"\nS&P 500 processing complete. Results saved to {out_csv}")

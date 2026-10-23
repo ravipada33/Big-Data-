@@ -50,8 +50,8 @@ python FinancialData.py --sp500 --selection Tesla
 
 Open these files:
 
-- `combined_monthly_sp500_2024.csv`  
-  Contains the final stock results.
+- `combined_monthly_sp500_2024_YYYYMMDD_HHMMSS.csv`  
+  Contains the final stock results. A new timestamped file is created for every run.
 
 - `FinancialData.log`  
   Contains the program time and processing information.
