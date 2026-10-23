@@ -100,7 +100,13 @@ def chunked_download(
     for i in range(0, len(ticker_list), chunk_size):
         chunk = ticker_list[i : i + chunk_size]
         logging.info("Downloading chunk %d (%d tickers)...", i // chunk_size + 1, len(chunk))
-        df = yf.download(tickers=chunk, **yf_kwargs, group_by="ticker", auto_adjust=True)
+        df = yf.download(
+            tickers=chunk,
+            **yf_kwargs,
+            group_by="ticker",
+            auto_adjust=True,
+            threads=False,
+        )
         if isinstance(df.columns, pd.MultiIndex):
             for tk in chunk:
                 if tk in df:
@@ -123,6 +129,7 @@ def monthly_stats_for_period(
     """
     df.index = pd.to_datetime(df.index)
     df_period = df.loc[period_start:period_end]
+    df_period = df_period.dropna(subset=["Close"])
     rows_used = int(df_period.shape[0])
     if rows_used == 0:
         return pd.DataFrame(), 0
