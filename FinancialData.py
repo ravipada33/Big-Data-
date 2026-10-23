@@ -192,6 +192,9 @@ def run_sp500(
 ) -> None:
     _total_start = perf_counter()
     logging.info("SP500 mode enabled — fetching S&P 500 symbols")
+    analysis_year = pd.Timestamp(end_date).year - 1
+    analysis_start = f"{analysis_year}-01-01"
+    analysis_end = f"{analysis_year}-12-31"
     all_symbols = fetch_sp500_symbols()
     if selection is None:
         selection = str(max_tickers) if max_tickers is not None else input(
@@ -216,7 +219,7 @@ def run_sp500(
     rows_2024_counts = {}
     for tk, df in data_dict.items():
         try:
-            stats, rows_used = monthly_stats_for_period(df, "2025-01-01", "2025-12-31")
+            stats, rows_used = monthly_stats_for_period(df, analysis_start, analysis_end)
             rows_2024_counts[tk] = rows_used
             if rows_used == 0 or stats.empty:
                 continue
@@ -255,7 +258,7 @@ def run_sp500(
     )
 
     run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    out_csv = Path.cwd() / f"{filename_label}_data_2025_{run_timestamp}.csv"
+    out_csv = Path.cwd() / f"{filename_label}_data_{analysis_year}_{run_timestamp}.csv"
     combined_monthly.to_csv(out_csv, index=False)
     logging.info("Saved combined CSV to %s", out_csv)
     print(f"\nS&P 500 processing complete. Results saved to {out_csv}")
