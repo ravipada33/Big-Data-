@@ -31,7 +31,7 @@ def configure_logging(log_path: Path = LOG_PATH) -> None:
 
 
 # --- Helpers: fetch tickers --------------------------------------------------
-def fetch_sp500_symbols() -> List[str]:
+def fetch_sp500_symbols() -> Tuple[List[str], Dict[str, str]]:
     """
     Fetch S&P 500 symbols from public CSV mirrors.
     Returns a list of ticker symbols (periods replaced with '-').
@@ -57,7 +57,10 @@ def fetch_sp500_symbols() -> List[str]:
                     text = r.read().decode("utf-8")
             df = pd.read_csv(io.StringIO(text))
             syms = df["Symbol"].astype(str).str.replace(".", "-", regex=False).tolist()
-            return syms
+            names = {}
+            if "Security" in df.columns:
+                names = dict(zip(syms, df["Security"].astype(str)))
+            return syms, names
         except Exception as exc:
             logging.warning("Failed to fetch S&P500 from %s: %s", url, exc)
     raise RuntimeError(
@@ -65,7 +68,9 @@ def fetch_sp500_symbols() -> List[str]:
     )
 
 
-def resolve_selection(selection: str, symbols: List[str]) -> List[str]:
+def resolve_selection(
+    selection: str, symbols: List[str], company_names: Optional[Dict[str, str]] = None
+) -> List[str]:
     """Return the first N symbols or one symbol matching a ticker/company name."""
     value = selection.strip()
     if value.isdigit():
@@ -74,31 +79,23 @@ def resolve_selection(selection: str, symbols: List[str]) -> List[str]:
             raise ValueError(f"Enter a number between 1 and {len(symbols)}.")
         return symbols[:count]
 
-    aliases = {
-        "apple": "AAPL",
-        "amazon": "AMZN",
-        "alphabet": "GOOGL",
-        "google": "GOOGL",
-        "microsoft": "MSFT",
-        "meta": "META",
-        "nvidia": "NVDA",
-        "tesla": "TSLA",
-    }
+    company_names = company_names or {}
     normalized = "".join(value.lower().split())
-    normalized_aliases = {"".join(name.split()): ticker for name, ticker in aliases.items()}
-    requested = normalized_aliases.get(normalized, value.upper().replace(".", "-"))
+    normalized_names = {
+        "".join(name.lower().split()): ticker for ticker, name in company_names.items()
+    }
+    requested = normalized_names.get(normalized, value.upper().replace(".", "-"))
     if requested not in symbols:
-        candidates = list(symbols) + list(normalized_aliases)
+        candidates = list(symbols) + list(normalized_names)
         match = get_close_matches(normalized, candidates, n=1, cutoff=0.55)
         if match:
-            suggested = normalized_aliases.get(match[0], match[0])
+            suggested = normalized_names.get(match[0], match[0])
+            display_name = company_names.get(suggested, suggested)
             answer = input(
-                f"Could not find '{value}'. Did you mean '{match[0]}' ({suggested})? (yes/no): "
+                f"Could not find '{value}'. Did you mean '{display_name}' ({suggested})? (yes/no): "
             ).strip().lower()
             if answer in {"yes", "y"} and suggested in symbols:
                 return [suggested]
-        if normalized == "spacex":
-            raise ValueError("SpaceX is a private company and is not listed in the S&P 500.")
         raise ValueError(f"Could not find '{value}' in the S&P 500 list.")
     return [requested]
 
@@ -209,13 +206,13 @@ def run_sp500(
     analysis_year = pd.Timestamp(end_date).year - 1
     analysis_start = f"{analysis_year}-01-01"
     analysis_end = f"{analysis_year}-12-31"
-    all_symbols = fetch_sp500_symbols()
+    all_symbols, company_names = fetch_sp500_symbols()
     if selection is None:
         selection = str(max_tickers) if max_tickers is not None else input(
             "How many S&P 500 companies, or which company? (example: 10 or Tesla): "
         )
     filename_label = selection_filename_label(selection)
-    tickers_list = resolve_selection(selection, all_symbols)
+    tickers_list = resolve_selection(selection, all_symbols, company_names)
     logging.info("Loaded %d symbols (sample: %s)", len(tickers_list), tickers_list[:6])
 
     _download_start = perf_counter()
