@@ -89,6 +89,24 @@ def resolve_selection(selection: str, symbols: List[str]) -> List[str]:
     return [requested]
 
 
+def selection_filename_label(selection: str) -> str:
+    """Create a readable filename label from a number or company selection."""
+    value = selection.strip()
+    if value.isdigit():
+        return f"top_{int(value)}"
+    names = {
+        "apple": "Apple",
+        "amazon": "Amazon",
+        "alphabet": "Alphabet",
+        "google": "Google",
+        "microsoft": "Microsoft",
+        "meta": "Meta",
+        "nvidia": "Nvidia",
+        "tesla": "Tesla",
+    }
+    return names.get(value.lower(), value.upper().replace(".", "-"))
+
+
 def load_tickers_from_file(path: Path, limit: Optional[int] = None) -> List[str]:
     """Read one ticker per line from a file (ignore comments / blank lines)."""
     lines = []
@@ -179,6 +197,7 @@ def run_sp500(
         selection = str(max_tickers) if max_tickers is not None else input(
             "How many S&P 500 companies, or which company? (example: 10 or Tesla): "
         )
+    filename_label = selection_filename_label(selection)
     tickers_list = resolve_selection(selection, all_symbols)
     logging.info("Loaded %d symbols (sample: %s)", len(tickers_list), tickers_list[:6])
 
@@ -197,7 +216,7 @@ def run_sp500(
     rows_2024_counts = {}
     for tk, df in data_dict.items():
         try:
-            stats, rows_used = monthly_stats_for_period(df, "2024-01-01", "2024-12-31")
+            stats, rows_used = monthly_stats_for_period(df, "2025-01-01", "2025-12-31")
             rows_2024_counts[tk] = rows_used
             if rows_used == 0 or stats.empty:
                 continue
@@ -235,8 +254,8 @@ def run_sp500(
         total_aggregated_rows,
     )
 
-    run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    out_csv = Path.cwd() / f"combined_monthly_sp500_2024_{run_timestamp}.csv"
+    run_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+    out_csv = Path.cwd() / f"{filename_label}_data_2025_{run_timestamp}.csv"
     combined_monthly.to_csv(out_csv, index=False)
     logging.info("Saved combined CSV to %s", out_csv)
     print(f"\nS&P 500 processing complete. Results saved to {out_csv}")
